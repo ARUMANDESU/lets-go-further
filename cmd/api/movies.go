@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
 	"github.com/arumandesu/greenlight2/internal/data"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -10,7 +10,24 @@ import (
 )
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "create a new movie")
+
+	var input struct {
+		Title   string   `json:"title"`
+		Year    int32    `json:"year,omitempty"`
+		Runtime int32    `json:"runtime,omitempty"`
+		Genres  []string `json:"genres,omitempty"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelop{"movie": input}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
 
 func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request) {
