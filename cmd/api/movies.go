@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/arumandesu/greenlight2/internal/data"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -18,9 +17,9 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		Genres  []string `json:"genres,omitempty"`
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&input)
+	err := app.readJSON(r, &input)
 	if err != nil {
-		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
