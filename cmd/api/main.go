@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 	"os"
@@ -37,13 +36,9 @@ func main() {
 		logger: logger,
 	}
 
-	mux := chi.NewMux()
-
-	mux.Get("/v1/healthcheck", app.healthcheckHandler)
-
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      mux,
+		Handler:      app.routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
