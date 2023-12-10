@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/arumandesu/greenlight2/internal/data"
-	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"log"
 	"net/http"
@@ -21,6 +22,7 @@ type config struct {
 	db   struct {
 		dsn          string
 		maxOpenConns int
+		maxIdleConns int
 		maxIdleTime  string
 	}
 }
@@ -44,8 +46,11 @@ func main() {
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production")
 	flag.StringVar(&cfg.db.dsn, "dsn", os.Getenv("DATABASE_DSN"), "PostgreSQL DSN")
+
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
+	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "PostgreSQL max connection idle time")
+
 	flag.Parse()
 
 	db, err := openDB(cfg)
@@ -76,8 +81,8 @@ func main() {
 
 }
 
-func openDB(cfg config) (*pgxpool.Pool, error) {
-	config, err := pgxpool.ParseConfig(cfg.db.dsn)
+func openDB(cfg config) (*sql.DB, error) {
+	db, err := sql.Open("pgx", cfg.db.dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -86,18 +91,14 @@ func openDB(cfg config) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, err
 	}
-	config.MaxConnIdleTime = duration
-	config.MaxConns = int32(cfg.db.maxOpenConns)
-
-	db, err := pgxpool.NewWithConfig(context.Background(), config)
-	if err != nil {
-		return nil, err
-	}
+	db.SetMaxOpenConns(cfg.db.maxOpenConns)
+	db.SetMaxIdleConns(cfg.db.maxIdleConns)
+	db.SetConnMaxIdleTime(duration)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err = db.Ping(ctx)
+	err = db.PingContext(ctx)
 	if err != nil {
 		return nil, err
 	}
