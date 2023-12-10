@@ -6,8 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/arumandesu/greenlight2/internal/data"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 	"os"
@@ -82,7 +82,7 @@ func main() {
 }
 
 func openDB(cfg config) (*sql.DB, error) {
-	db, err := sql.Open("pgx", cfg.db.dsn)
+	db, err := sql.Open("postgres", cfg.db.dsn)
 	if err != nil {
 		return nil, err
 	}
