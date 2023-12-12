@@ -3,11 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/arumandesu/greenlight2/internal/data"
 	"github.com/arumandesu/greenlight2/internal/validator"
 	"github.com/go-chi/chi/v5"
-	"net/http"
-	"strconv"
 )
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
@@ -96,10 +97,10 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	var input struct {
-		Title   string       `json:"title"`
-		Year    int32        `json:"year,omitempty"`
-		Runtime data.Runtime `json:"runtime,omitempty"`
-		Genres  []string     `json:"genres,omitempty"`
+		Title   *string       `json:"title,omitempty"`
+		Year    *int32        `json:"year,omitempty"`
+		Runtime *data.Runtime `json:"runtime,omitempty"`
+		Genres  []string      `json:"genres,omitempty"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -108,10 +109,19 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	movie.Title = input.Title
-	movie.Year = input.Year
-	movie.Runtime = input.Runtime
-	movie.Genres = input.Genres
+	if input.Title != nil {
+		movie.Title = *input.Title
+	}
+
+	if input.Year != nil {
+		movie.Year = *input.Year
+	}
+	if input.Runtime != nil {
+		movie.Runtime = *input.Runtime
+	}
+	if input.Genres != nil {
+		movie.Genres = input.Genres
+	}
 
 	v := validator.New()
 
